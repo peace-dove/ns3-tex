@@ -8,11 +8,42 @@
 \usepackage{amsmath}
 \usepackage{amssymb}
 \usepackage{cite}
+\usepackage{float}
+\usepackage{listings}
+\usepackage{xcolor}
+
 \geometry{
 	a4paper,
 	total={170mm,257mm},
 	left=20mm,
 	top=20mm,
+}
+
+\lstset{
+    basicstyle          =   \sffamily,          % 基本代码风格
+    keywordstyle        =   \bfseries,          % 关键字风格
+    commentstyle        =   \rmfamily\itshape,  % 注释的风格，斜体
+    stringstyle         =   \ttfamily,  % 字符串风格
+    flexiblecolumns,                % 别问为什么，加上这个
+    numbers             =   left,   % 行号的位置在左边
+    showspaces          =   false,  % 是否显示空格，显示了有点乱，所以不现实了
+    numberstyle         =   \zihao{-5}\ttfamily,    % 行号的样式，小五号，tt等宽字体
+    showstringspaces    =   false,
+    captionpos          =   t,      % 这段代码的名字所呈现的位置，t指的是top上面
+    frame               =   lrtb,   % 显示边框
+}
+
+\lstdefinestyle{Python}{
+    language        =   Python, % 语言选Python
+    basicstyle      =   \zihao{-5}\ttfamily,
+    numberstyle     =   \zihao{-5}\ttfamily,
+    keywordstyle    =   \color{blue},
+    keywordstyle    =   [2] \color{teal},
+    stringstyle     =   \color{magenta},
+    commentstyle    =   \color{red}\ttfamily,
+    breaklines      =   true,   % 自动换行，建议不要写太长的行
+    columns         =   fixed,  % 如果不加这一句，字间距就不固定，很丑，必须加
+    basewidth       =   0.5em,
 }
 
 \title{\heiti NS3网络仿真实验}
@@ -63,6 +94,70 @@
 \tableofcontents
 \newpage
 \section{TCP}
+\subsection{主动队列管理算法}
+传统TCP的端到端拥塞控制很难完全避免崩溃，网络节点必须主动加入到拥塞控制中来，依靠自身软件和硬件结合来感知缓冲区的占有率，通过对占有率的评估管理缓存，及时避免拥塞崩溃的出现。这其中队列管理是指在网络发送拥塞时，路由节点靠丢掉部分数据包来减小自身队列长度，调整缓冲区的占有率。队列长度的管理将在很大程度上影响网络的QOS，而目前的队列管理算法中主要有两大类：\textbf{被动队列调度机制（PQM）}和\textbf{主动队列调度机制（AQM）}。
+
+被动队列调度机制（PQM）已经逐渐随着计算机网络通讯发展被搁置，主动队列调度机制（AQM）开始起到关键作用，AQM方法是根据队列长度的变化对队列满行提前丢包，从而预先告之网络拥塞，使得发送节点在链路缓存溢出前作出反映，有效减少和避免拥塞的发生。这其中有两种策略最为经典：\textbf{尾部丢弃策略（tail-drop policy）}和\textbf{随机早期检测（random early detection）}，尾部丢弃策略指当队列长度已满时，以后再达到的分组（原本将被排在队列尾部）都将被丢弃；随机早期检测指，在出现网络拥塞的早期（路由器的平均队列达到一定数值），路由节点就以一定概率P丢弃个别分组，这样拥塞控制就只会出现某个TCP上而不会造成全局断联。随机早期检测有以下几个关键参数：
+
+\begin{table}[H]
+	\centering
+	\caption{数学符号}
+	\label{table}
+	\begin{tabular}{cc}
+		\hline
+		符号表示&符号含义\\
+		$max_{th}$ & 队列最长门限长度\\
+		$min_{th}$ & 队列最小门限长度\\
+		$W_f$ & 计算平均队列长度的权值因子\\
+		$Qlen$ & 队列长度\\
+		$max_p$ & 最大丢弃概率\\
+		$Load$ & 瓶颈节点的传输速率\\
+		\hline
+	\end{tabular}
+\end{table}
+
+\subsection{仿真测试}
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[scale=0.6]{picture/topology1.png}
+	\caption{网络拓扑图}
+	\label{fig:topology1}
+\end{figure}
+
+\subsubsection{丢弃概率}
+随机早期检测最难把握的地方就在丢弃概率的选择，因为P不是一个常数，而应该随着网络状况和硬件条件改变，初始的分组标记概率P是平均队列长度的线性函数：
+\begin{equation*}
+	P=max_p(avg-min_{th})/(max_{th}-min_{th})
+\end{equation*}
+
+参数$max_p$是标记概率的最大值，当达到平均队列的长度上限时取到。
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[scale=0.6]{picture/p.png}
+	\caption{丢弃概率对吞吐量的影响}
+	\label{fig:p}
+\end{figure}
+
+在仿真测试中，我们选取了从0到1间距0.1的11个值，同时构建了一张网络拓扑图：瓶颈节点将接受来自三个节点的UDP和TCP混合流量，再将这些混合流量转发给各种的接收方，可以看到由于UDP的无连接性，它几乎不受到丢弃概率的影响始终维持较高的吞吐量，而TCP1和TCP2由于其面向连接的特性，吞吐量非常小，但同时也很明显地看出，TCP流量并没有随着丢弃概率的增加或者减小有正负相关性，反而出现在一定概率左右稳定，超出后大量衰减或增加的现象。
+
+\subsubsection{平均队列权值}
+随机早期检测中$W_q$影响平均队列长度，当$W_q$取值较大时，平均队列长度容易受到瞬时性改变，平均队列长度将在短时间内剧增；当$W_q$取值较小，平均队列变化不大，对可能到达的拥塞不敏感，这样调节效果不佳。平均队列长度由以下迭代式给出：
+\begin{equation*}
+	avg^{n+1}=(1-W_q)avg^{n}+w_q*Qlen
+\end{equation*}
+
+由此可见，参数avg是由当前队列长度和旧平均队列长度综合权值得来。
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[scale=0.6]{picture/Wq.png}
+	\caption{平均队列长度的权值对吞吐量的影响}
+	\label{fig:Wq}
+\end{figure}
+
+我们仍旧使用以上拓扑结构进行仿真实验，这次UDP流量仍然超出TCP1和TCP2很多，但其中明显受到平均队列长度的影响，在$W_q=0.07$时有较大衰减；与此同时，TCP流量都呈现出两边较高中间较低（抛去0.05-0.06），这说明仅仅从理论上分析出$W_q$不能极端取值，也不意味着维持中立就能获得较好的吞吐量，甚至极有可能比一般情况更差。
 \section{CSMA/CA实验}
 \subsection{802.11Mac层协议}
 
@@ -142,8 +237,11 @@ T_{rts/cts} = DIFS + RTS + SIFS + CTS + SIFS + DATA + SIFS + ACK
 \begin{table}[]
 	\centering
 	\begin{tabular}{llllllll}
+		\hline
 		cwMin      & 3       & 15      & 50      & 100     & 250     & 500     & 1000   \\
-		Throughput & 26.0543 & 28.3936 & 30.8834 & 31.8698 & 31.4822 & 28.9347 & 24.434
+		\hline
+		Throughput & 26.0543 & 28.3936 & 30.8834 & 31.8698 & 31.4822 & 28.9347 & 24.434 \\
+		\hline
 	\end{tabular}
 	\caption{不同cwMin对总吞吐量的影响}
 	\label{tab:cwMin}
@@ -264,6 +362,14 @@ T_{d}=\sum_{i=0}^{\infty}(1-p)p^{i-1}T_{d}^{i}
 
 \appendix
 \section{TCP相关}
+
+\subsection {\bf RED代码}
+\lstinputlisting[
+style       =   Python,
+caption     =   {\bf p2.cc},
+label       =   {p2.cc}
+]{./code/p2.cc}
+
 \section{DCF仿真代码}
 \subsection{数据}
 \end{document}
