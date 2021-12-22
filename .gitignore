@@ -14,3 +14,4 @@ main.pdf
 *.fls
 *.fdb_latexmk
 *.out
+*.vscode
