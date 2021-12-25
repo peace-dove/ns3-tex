@@ -355,9 +355,49 @@ T_{d}=\sum_{i=0}^{\infty}(1-p)p^{i-1}T_{d}^{i}
 
 但是另一方面由于RTS/CTS方式将大量的时间都消耗在RTS帧和CTS帧的交互上了，真正传输数据的时间并不是很长。这也在理论上解释了在较短帧长的情况下使用RTS/CTS方式会导致吞吐率的下降，也就是一个传输时间单元中传输有效数据的时长较短，有效吞吐率较低，而在较长帧长的情况下使用RTS/CTS方式能有效提高整体性能吞吐率，此时避免冲突的效果比较好。
 
+\section{5G的非组网架构双连接仿真实验}
+\subsection{5G多连接的必要性}
+毫米波（mmWave）频段--指的是一种特殊电磁波，波长为1毫米到10毫米，波动频率为30GHz-300GHz。相对于6GHz以下的频段，毫米波具有大带宽、低空口时延和灵活弹性空口配置等独特优势，可满足未来无线通信对系统容量、传输速率和差异化应用等方面的需求。然而，使用毫米波频段提供稳定服务仍需要克服一个关键性障碍，信道间歇性。毫米波信号会被许多常见的建筑材料所阻挡，比如砖头和玻璃。甚至人体也会造成高达35dB的的衰减。因此，由于客户端UE在不同Cell间的移动，障碍相对UE的移动、甚至手机在手上的微小移动，都可能导致信道迅速出现或消失。多连接是提高毫米波系统稳定性的主要工具之一。即每个移动设备UE或用户设备保持与多个Cell的连接。这里的多个Cell可能包括5G毫米波Cell和/或传统4GLTE Cell。在一条链路被阻断的情况下，UE可以找到替代的路线来保持连接。
+\begin{figure}[ht]
+	\centering
+	\includegraphics[scale=0.6]{picture/5G-SNA.jpg}
+	\caption{LTE-5G tight-integration architecture}
+	\label{fig:delay}
+\end{figure}
+\subsection{双连接（DC）的原理}
+使用双连接（DC）是一个不同的和更强大的解决方案，UE同时连接到LTE和毫米波BS。LTE Cell作为一个备份：由于UE已经连接，当mmWave链路的信号质量下降时，不需要用随机接入程序进行完整的切换，也不需要向核心网发送路径切换消息。从LTE BS到UE的单一RRC控制消息就足够了。LTE Cell也是所有邻近mmWave Cell的协调者，并且是双连接设备进入核心网络的接入点。在这种设置中，UE发射试点，mmWave基站可用于估计链路质量（例如通过测量SNR）。这些测量值通过X2接口定期从每个mmWaveCell发送到LTECell。因此，LTE BS知道哪个是每个UE的最佳mmWave Cell。
+\subsection{ns-3 mmWave模块仿真实验}
+借助ns-3 mmWave McUeNetDevice，可以模拟类似于图 11中的场景：在其覆盖范围下有一个 LTE eNB 和多个毫米波 eNB，要么位于同一位置，要么通过 X2 接口连接。根据 ns–3 中可用的移动模型，UE 可以以不同的速度移动，而在移动时，根据其位置和与 eNB 的距离，UE 会遍历不同的信道条件。这些方案可用于评估不同移动性管理和多连接方案的性能。
+\begin{figure}[ht]
+	\centering
+	\includegraphics[scale=0.4]{picture/5G-building.jpg}
+	\caption{模拟场景}
+	\label{fig:delay}
+\end{figure}
+
+此仿真实验的目的是比较双连接（DC）系统和硬切换（Hard Handover）系统的吞吐量、延迟。当UE 遇到连接中断时，DC架构的好处是显而易见的：由于双连接，它可以立即使用 LTE 链路恢复通信。而独立 UE 必须感知链路故障，然后执行要用随机接入程序进行完整的切换。这需要更多的时间，并导致该时刻吞吐量为零。
+\begin{figure}[ht]
+	\centering
+	\includegraphics[scale=0.45]{picture/DlRlcStats_Throughput.png}
+	\includegraphics[scale=0.45]{picture/DlRlcStats_Latency.png}
+	\caption{双连接}
+	\label{fig:delay}
+\end{figure}
+\begin{figure}[ht]
+	\centering
+	\includegraphics[scale=0.45]{picture/DlPdcpStats_Throughput.png}
+	\includegraphics[scale=0.45]{picture/DlPdcpStats_Latency.png}
+	\caption{硬切换}
+	\label{fig:delay}
+\end{figure}
+
+证明了双连通性框架在使用mmWave访问链路的端到端网络的切换管理方面提供了显著的性能改进，包括（i）减少包丢失，（ii）减少控制指令，（iii）减少延迟，（iV）更高的吞吐量稳定性。
+\clearpage
 \begin{thebibliography}{99}
 	\bibitem{1} 白科,胡建平.无线局域网DCF性能分析与仿真[J].现代电子技术,2008(01):13-15+17.
 	\bibitem{2} 陈坚刚.IEEE802.11b的DCF退避算法实现技术探究[J].浙江工商职业技术学院学报,2010,9(03):36-39.
+	\bibitem{3} M. Polese, M. Giordani, M. Mezzavilla, S. Rangan and M. Zorzi, "Improved handover through dual connectivity in 5G mmWave mobile networks", IEEE J. Sel. Areas Commun., vol. 35, no. 9, pp. 2069-2084, Sep. 2017.
+	\bibitem{4} M. Polese, M. Mezzavilla and M. Zorzi, "Performance comparison of dual connectivity and hard handover for LTE-5G tight integration", Proc. 9th EAI Int. Conf. Simulat. Tools Techn. (SIMUTOOLS), pp. 118-123, 2016, [online] Available: http://dl.acm.org/citation.cfm?id=3021426.3021445.
 \end{thebibliography}
 
 \appendix
