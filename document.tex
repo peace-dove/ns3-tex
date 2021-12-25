@@ -34,7 +34,7 @@
 }
 
 \lstdefinestyle{Python}{
-    language        =   Python, % 语言选Python
+    language        =   C++,
     basicstyle      =   \zihao{-5}\ttfamily,
     numberstyle     =   \zihao{-5}\ttfamily,
     keywordstyle    =   \color{blue},
@@ -127,9 +127,7 @@
 \end{figure}
 
 \subsubsection{丢弃概率}
-
-随机早期检测最难把握的地方就在丢弃概率的选择，因为P不是一个常数，而应该随着网络状况和硬件条件改变，初始的分组标记概率P是平均队列长度的线性函数：
-
+随机早期检测最难把握的地方就在丢弃概率的选择，因为$P$不是一个常数，而应该随着网络状况和硬件条件改变，初始的分组标记概率P是平均队列长度的线性函数：
 \begin{equation*}
 	P=max_p(avg-min_{th})/(max_{th}-min_{th})
 \end{equation*}
@@ -166,7 +164,46 @@
 
 \subsection{TCP拥塞控制}
 
+TCP拥塞控制的目标在于最大化利用网络上瓶颈链路（Bottleneck）的带宽，直至瓶颈链路因为过多的流量而产生错误（丢包、不可达），一旦出现这种错误TCP就通过动态化调整自身发送字节的速率来保证接下来传输速率的恢复。
 
+不同的拥塞控制算法思想由于其切入点有差异，可能会带来完全不同的效果，因此本次实验试图模拟在某一特定环境下不同拥塞算法的性能差异。
+
+\subsubsection{拥塞模拟概述}
+
+整个实验过程基于两个点对点相连的路由，拥塞算法则选择了$Vegas$，$Veno$，$WestWood$，，路由分别采用$DropTail$主动队列管理算法，同时在接受路由上加入了错误因子使得报文有一定概率在数据链路层就被丢弃，这会导致接收端无法收到想要的回送报文，继而让发送端产生网络拥塞的错误判断后启动拥塞算法。以下是三种拥塞算法的介绍：
+
+\begin{itemize}
+	\setlength{\itemsep}{0pt}
+	\setlength{\parsep}{0pt}
+	\setlength{\parskip}{0pt}
+	\item [1)]Vega不通过丢包来检测拥塞现象，而是通过吞吐量来预测进而动态变化调整窗口，它定义两个常量$a，b（a<b)$，当$Diff< a$时，则线性增加拥塞窗口；当$Diff> b$时，线性减少拥塞窗口。这种拥塞控制方式是在拥塞将要发生时控制，而不是在拥塞发生后控制。
+	\item [2)]Veno是对Reno算法中的慢启动（Slow Start）、拥塞避免（Congestion Avoid）、快速重传（Fast Retransmit）和快速恢复（Fast Recovery）等机制进行进一步改进。在拥塞避免阶段，它调整了窗口大小的衰减速率，使其能够更长时间处于较大的窗口而不至于迅速减小。在快速重传阶段，Veno适当降低了慢启动门限值（ssthresh），使TCP窗口大小处于较大值状态。
+	\item [3)]WestWood同样在Reno基础上增强了窗口控制和退避处理，当接受到ACK报文时，将此报文的大小除以经过的时间，得到当前带宽的一个评估值。当WestWood在调整窗口时候，重新调整到可用带宽处，而不是简单地将窗口减半。
+\end{itemize}
+
+\subsubsection{实验结果与分析}
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[scale=0.6]{picture/cwTcp.png}
+	\caption{TCP窗口大小与时间关系}
+	\label{fig:cWTCP}
+\end{figure}
+
+在0.25s时发生了一次丢包事件，这可能是路由的队列管理或者校验和错误，Venos、WestWood都有非常明显的下降趋势，WestWood的下降比率达到了将近$90\%$，而Veno也有$50\%$左右，相比之下Vegas则由于其较小的增速与减速率维持住了一个较好的平衡。
+
+在0.75s时由于错误因子的偶发性导致Vegas和Veno都遭遇了丢包，WestWood窗口大小超越了前两者并持续到了实验结束，但三种算法的窗口大小都已接近于收敛，彼此差距都很小。
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[scale=0.6]{picture/byteTcp.png}
+	\caption{字节总量与时间关系图}
+	\label{fig:byteTCP}
+\end{figure}
+
+虽然在窗口大小上每种算法都经历了各种窗口大小的变化，但是从宏观角度，接收方所得到字节总量并没有发生太大区别，其主要原因有：（1）错误因子设置的比较小这也符合标准情况下网络链路出错概率较小的情况；（2）网络速率较快，短时间内的丢包将迅速被重传机制，快恢复机制所改正。
+
+经过以上实验，我们可以看到在标准环境下，WestWood凭借其算法特性窗口大小浮动很大，而Vegas和Veno则相对稳健，其中Veno更是能够在丢包事件中实现接受字节数小幅度减少。
 
 \section{CSMA/CA实验}
 \subsection{802.11Mac层协议}
@@ -185,7 +222,7 @@ CSMA/CD要求一个站点在发送数据的同时不断检测信道，而一旦�
 	
 \end{enumerate}
 
-802.11协议组于1997年提出了802.11的物理层和MAC层的协议规范，大大推动了无线局域网的应用和发展。也就是使用CSMA/CA协议，CA是碰撞避免的意思，表明了设计的初衷哦那个为尽量煎炒碰撞大声的概率。
+802.11协议组于1997年提出了802.11的物理层和MAC层的协议规范，大大推动了无线局域网的应用和发展。也就是使用CSMA/CA协议，CA是碰撞避免的意思，表明了设计的初衷是为了尽量减少碰撞发生的概率。
 
 值得注意的是，802.11标准设计了独特的MAC层，这是通过协调功能来确定在基本服务集上的移动站，在什么时候能发送数据或者接受数据。协议所定义的 MAC 层的协议中主要有 DCF（分布式协调功能）和PCF点协调功能）协议。DCF是基于CSMA/CA的随机竞争接入方式，而PCF是集中式接入方式，主要应用在基础架构网中。由于 PCF 是可选机制，而且在实际应用中较少采用，所以本文主要讨论的是DCF的性能分析。
 
