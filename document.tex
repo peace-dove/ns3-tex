@@ -121,7 +121,7 @@
 
 \begin{figure}[H]
 	\centering
-	\includegraphics[scale=0.6]{picture/topology1.png}
+	\includegraphics[scale=0.8]{picture/topology1.png}
 	\caption{网络拓扑图}
 	\label{fig:topology1}
 \end{figure}
@@ -196,7 +196,7 @@ TCP拥塞控制的目标在于最大化利用网络上瓶颈链路（Bottleneck�
 
 \begin{figure}[H]
 	\centering
-	\includegraphics[scale=0.6]{picture/byteTcp.png}
+	\includegraphics[scale=0.5]{picture/byteTcp.png}
 	\caption{字节总量与时间关系图}
 	\label{fig:byteTCP}
 \end{figure}
@@ -417,20 +417,20 @@ T_{d}=\sum_{i=0}^{\infty}(1-p)p^{i-1}T_{d}^{i}
 借助ns-3 mmWave McUeNetDevice，可以模拟类似于图 11中的场景：在其覆盖范围下有一个 LTE eNB 和多个毫米波 eNB，要么位于同一位置，要么通过 X2 接口连接。根据 ns–3 中可用的移动模型，UE 可以以不同的速度移动，而在移动时，根据其位置和与 eNB 的距离，UE 会遍历不同的信道条件。这些方案可用于评估不同移动性管理和多连接方案的性能。
 \begin{figure}[ht]
 	\centering
-	\includegraphics[scale=0.4]{picture/5G-building.jpg}
+	\includegraphics[scale=0.6]{picture/buildings.png}
 	\caption{模拟场景}
 	\label{fig:delay}
 \end{figure}
 
 此仿真实验的目的是比较双连接（DC）系统和硬切换（Hard Handover）系统的吞吐量、延迟。当UE 遇到连接中断时，DC架构的好处是显而易见的：由于双连接，它可以立即使用 LTE 链路恢复通信。而独立 UE 必须感知链路故障，然后执行要用随机接入程序进行完整的切换。这需要更多的时间，并导致该时刻吞吐量为零。
-\begin{figure}[ht]
+\begin{figure}[H]
 	\centering
 	\includegraphics[scale=0.45]{picture/DlRlcStats_Throughput.png}
 	\includegraphics[scale=0.45]{picture/DlRlcStats_Latency.png}
 	\caption{双连接}
 	\label{fig:delay}
 \end{figure}
-\begin{figure}[ht]
+\begin{figure}[H]
 	\centering
 	\includegraphics[scale=0.45]{picture/DlPdcpStats_Throughput.png}
 	\includegraphics[scale=0.45]{picture/DlPdcpStats_Latency.png}
