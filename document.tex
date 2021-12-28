@@ -127,10 +127,10 @@
 \end{figure}
 
 \subsubsection{丢弃概率}
-随机早期检测最难把握的地方就在丢弃概率的选择，因为$P$不是一个常数，而应该随着网络状况和硬件条件改变，初始的分组标记概率P是平均队列长度的线性函数：
-\begin{equation*}
+随机早期检测最难把握的地方就在丢弃概率的选择，因为$P$不是一个常数，而应该随着网络状况和硬件条件改变，初始的分组标记概率$P$是平均队列长度的线性函数：
+\begin{equation}
 	P=max_p(avg-min_{th})/(max_{th}-min_{th})
-\end{equation*}
+\end{equation}
 
 参数$max_p$是标记概率的最大值，当达到平均队列的长度上限时取到。
 
@@ -147,11 +147,11 @@
 
 随机早期检测中$W_q$影响平均队列长度，当$W_q$取值较大时，平均队列长度容易受到瞬时性改变，平均队列长度将在短时间内剧增；当$W_q$取值较小，平均队列变化不大，对可能到达的拥塞不敏感，这样调节效果不佳。平均队列长度由以下迭代式给出：
 
-\begin{equation*}
+\begin{equation}
 	avg^{n+1}=(1-W_q)avg^{n}+w_q*Qlen
-\end{equation*}
+\end{equation}
 
-由此可见，参数avg是由当前队列长度和旧平均队列长度综合权值得来。
+由此可见，参数$avg$是由当前队列长度和旧平均队列长度综合权值得来。
 
 \begin{figure}[H]
 	\centering
@@ -160,25 +160,25 @@
 	\label{fig:Wq}
 \end{figure}
 
-我们仍旧使用以上拓扑结构进行仿真实验，这次UDP流量仍然超出TCP1和TCP2很多，但其中明显受到平均队列长度的影响，在$W_q=0.07$时有较大衰减；与此同时，TCP流量都呈现出两边较高中间较低（抛去0.05-0.06），这说明仅仅从理论上分析出$W_q$不能极端取值，也不意味着维持中立就能获得较好的吞吐量，甚至极有可能比一般情况更差。
+我们仍旧使用以上拓扑结构进行仿真实验，这次UDP流量仍然超出TCP1和TCP2很多，但其中明显受到平均队列长度的影响，在$W_q=0.07$时有较大衰减；与此同时，TCP流量都呈现出两边较高中间较低（抛去$0.05 \sim 0.06$），这说明仅仅从理论上分析出$W_q$不能极端取值，也不意味着维持中立就能获得较好的吞吐量，甚至极有可能比一般情况更差。
 
 \subsection{TCP拥塞控制}
 
-TCP拥塞控制的目标在于最大化利用网络上瓶颈链路（Bottleneck）的带宽，直至瓶颈链路因为过多的流量而产生错误（丢包、不可达），一旦出现这种错误TCP就通过动态化调整自身发送字节的速率来保证接下来传输速率的恢复。
+TCP拥塞控制的目标在于最大化利用网络上瓶颈链路$(Bottleneck)$的带宽，直至瓶颈链路因为过多的流量而产生错误（丢包、不可达），一旦出现这种错误TCP就通过动态化调整自身发送字节的速率来保证接下来传输速率的恢复。
 
 不同的拥塞控制算法思想由于其切入点有差异，可能会带来完全不同的效果，因此本次实验试图模拟在某一特定环境下不同拥塞算法的性能差异。
 
 \subsubsection{拥塞模拟概述}
 
-整个实验过程基于两个点对点相连的路由，拥塞算法则选择了$Vegas$，$Veno$，$WestWood$，，路由分别采用$DropTail$主动队列管理算法，同时在接受路由上加入了错误因子使得报文有一定概率在数据链路层就被丢弃，这会导致接收端无法收到想要的回送报文，继而让发送端产生网络拥塞的错误判断后启动拥塞算法。以下是三种拥塞算法的介绍：
+整个实验过程基于两个点对点相连的路由，拥塞算法则选择了$Vegas$,$Veno$,$WestWood$，路由分别采用$DropTail$主动队列管理算法，同时在接受路由上加入了错误因子使得报文有一定概率在数据链路层就被丢弃，这会导致接收端无法收到想要的回送报文，继而让发送端产生网络拥塞的错误判断后启动拥塞算法。以下是三种拥塞算法的介绍：
 
 \begin{itemize}
 	\setlength{\itemsep}{0pt}
 	\setlength{\parsep}{0pt}
 	\setlength{\parskip}{0pt}
-	\item [1)]Vega不通过丢包来检测拥塞现象，而是通过吞吐量来预测进而动态变化调整窗口，它定义两个常量$a，b（a<b)$，当$Diff< a$时，则线性增加拥塞窗口；当$Diff> b$时，线性减少拥塞窗口。这种拥塞控制方式是在拥塞将要发生时控制，而不是在拥塞发生后控制。
-	\item [2)]Veno是对Reno算法中的慢启动（Slow Start）、拥塞避免（Congestion Avoid）、快速重传（Fast Retransmit）和快速恢复（Fast Recovery）等机制进行进一步改进。在拥塞避免阶段，它调整了窗口大小的衰减速率，使其能够更长时间处于较大的窗口而不至于迅速减小。在快速重传阶段，Veno适当降低了慢启动门限值（ssthresh），使TCP窗口大小处于较大值状态。
-	\item [3)]WestWood同样在Reno基础上增强了窗口控制和退避处理，当接受到ACK报文时，将此报文的大小除以经过的时间，得到当前带宽的一个评估值。当WestWood在调整窗口时候，重新调整到可用带宽处，而不是简单地将窗口减半。
+	\item [1)]$Vega$不通过丢包来检测拥塞现象，而是通过吞吐量来预测进而动态变化调整窗口，它定义两个常量$a$,$b$$(a<b)$，当$Diff< a$时，则线性增加拥塞窗口；当$Diff> b$时，线性减少拥塞窗口。这种拥塞控制方式是在拥塞将要发生时控制，而不是在拥塞发生后控制。
+	\item [2)]$Veno$是对$Reno$算法中的慢启动(Slow Start)、拥塞避免(Congestion Avoid)、快速重传(Fast Retransmit)和快速恢复(Fast Recovery)等机制进行进一步改进。在拥塞避免阶段，它调整了窗口大小的衰减速率，使其能够更长时间处于较大的窗口而不至于迅速减小。在快速重传阶段，$Veno$适当降低了慢启动门限值$(ssthresh)$，使TCP窗口大小处于较大值状态。
+	\item [3)]$WestWood$同样在$Reno$基础上增强了窗口控制和退避处理，当接受到$ACK$报文时，将此报文的大小除以经过的时间，得到当前带宽的一个评估值。当$WestWood$在调整窗口时候，重新调整到可用带宽处，而不是简单地将窗口减半。
 \end{itemize}
 
 \subsubsection{实验结果与分析}
@@ -190,9 +190,9 @@ TCP拥塞控制的目标在于最大化利用网络上瓶颈链路（Bottleneck�
 	\label{fig:cWTCP}
 \end{figure}
 
-在0.25s时发生了一次丢包事件，这可能是路由的队列管理或者校验和错误，Venos、WestWood都有非常明显的下降趋势，WestWood的下降比率达到了将近$90\%$，而Veno也有$50\%$左右，相比之下Vegas则由于其较小的增速与减速率维持住了一个较好的平衡。
+在0.25s时发生了一次丢包事件，这可能是路由的队列管理或者校验和错误，$Venos$、$WestWood$都有非常明显的下降趋势，$WestWood$的下降比率达到了将近$90\%$，而$Veno$也有$50\%$左右，相比之下$Vegas$则由于其较小的增速与减速率维持住了一个较好的平衡。
 
-在0.75s时由于错误因子的偶发性导致Vegas和Veno都遭遇了丢包，WestWood窗口大小超越了前两者并持续到了实验结束，但三种算法的窗口大小都已接近于收敛，彼此差距都很小。
+在0.75s时由于错误因子的偶发性导致$Vegas$和$Veno$都遭遇了丢包，$WestWood$窗口大小超越了前两者并持续到了实验结束，但三种算法的窗口大小都已接近于收敛，彼此差距都很小。
 
 \begin{figure}[H]
 	\centering
@@ -203,7 +203,7 @@ TCP拥塞控制的目标在于最大化利用网络上瓶颈链路（Bottleneck�
 
 虽然在窗口大小上每种算法都经历了各种窗口大小的变化，但是从宏观角度，接收方所得到字节总量并没有发生太大区别，其主要原因有：（1）错误因子设置的比较小这也符合标准情况下网络链路出错概率较小的情况；（2）网络速率较快，短时间内的丢包将迅速被重传机制，快恢复机制所改正。
 
-经过以上实验，我们可以看到在标准环境下，WestWood凭借其算法特性窗口大小浮动很大，而Vegas和Veno则相对稳健，其中Veno更是能够在丢包事件中实现接受字节数小幅度减少。
+经过以上实验，我们可以看到在标准环境下，$WestWood$凭借其算法特性窗口大小浮动很大，而$Vegas$和$Veno$则相对稳健，其中$Veno$更是能够在丢包事件中实现接受字节数小幅度减少。
 
 \section{CSMA/CA实验}
 \subsection{802.11Mac层协议}
@@ -404,22 +404,22 @@ T_{d}=\sum_{i=0}^{\infty}(1-p)p^{i-1}T_{d}^{i}
 
 \section{5G的非组网架构双连接仿真实验}
 \subsection{5G多连接的必要性}
-毫米波（mmWave）频段--指的是一种特殊电磁波，波长为1毫米到10毫米，波动频率为30GHz-300GHz。相对于6GHz以下的频段，毫米波具有大带宽、低空口时延和灵活弹性空口配置等独特优势，可满足未来无线通信对系统容量、传输速率和差异化应用等方面的需求。然而，使用毫米波频段提供稳定服务仍需要克服一个关键性障碍，信道间歇性。毫米波信号会被许多常见的建筑材料所阻挡，比如砖头和玻璃。甚至人体也会造成高达35dB的的衰减。因此，由于客户端UE在不同Cell间的移动，障碍相对UE的移动、甚至手机在手上的微小移动，都可能导致信道迅速出现或消失。多连接是提高毫米波系统稳定性的主要工具之一。即每个移动设备UE或用户设备保持与多个Cell的连接。这里的多个Cell可能包括5G毫米波Cell和/或传统4GLTE Cell。在一条链路被阻断的情况下，UE可以找到替代的路线来保持连接。
+毫米波（mmWave）频段指的是一种特殊电磁波，波长为1毫米到10毫米，波动频率为30GHz-300GHz。相对于6GHz以下的频段，毫米波具有大带宽、低空口时延和灵活弹性空口配置等独特优势，可满足未来无线通信对系统容量、传输速率和差异化应用等方面的需求。然而，使用毫米波频段提供稳定服务仍需要克服一个关键性障碍，信道间歇性。毫米波信号会被许多常见的建筑材料所阻挡，比如砖头和玻璃。甚至人体也会造成高达$35dB$的的衰减。因此，由于客户端$UE$在不同$Cell$间的移动，障碍相对UE的移动、甚至手机在手上的微小移动，都可能导致信道迅速出现或消失。多连接是提高毫米波系统稳定性的主要工具之一。即每个移动设备UE或用户设备保持与多个$Cell$的连接。这里的多个$Cell$可能包括5G毫米波$Cell$和传统$4GLTE \ Cell$。在一条链路被阻断的情况下，$UE$可以找到替代的路线来保持连接。
 \begin{figure}[ht]
 	\centering
 	\includegraphics[scale=0.6]{picture/5G-SNA.jpg}
 	\caption{LTE-5G tight-integration architecture}
-	\label{fig:delay}
+	\label{fig:delay1}
 \end{figure}
 \subsection{双连接（DC）的原理}
 使用双连接（DC）是一个不同的和更强大的解决方案，UE同时连接到LTE和毫米波BS。LTE Cell作为一个备份：由于UE已经连接，当mmWave链路的信号质量下降时，不需要用随机接入程序进行完整的切换，也不需要向核心网发送路径切换消息。从LTE BS到UE的单一RRC控制消息就足够了。LTE Cell也是所有邻近mmWave Cell的协调者，并且是双连接设备进入核心网络的接入点。在这种设置中，UE发射试点，mmWave基站可用于估计链路质量（例如通过测量SNR）。这些测量值通过X2接口定期从每个mmWaveCell发送到LTECell。因此，LTE BS知道哪个是每个UE的最佳mmWave Cell。
-\subsection{ns-3 mmWave模块仿真实验}
+\subsection{NS-3 mmWave模块仿真实验}
 借助ns-3 mmWave McUeNetDevice，可以模拟类似于图 11中的场景：在其覆盖范围下有一个 LTE eNB 和多个毫米波 eNB，要么位于同一位置，要么通过 X2 接口连接。根据 ns–3 中可用的移动模型，UE 可以以不同的速度移动，而在移动时，根据其位置和与 eNB 的距离，UE 会遍历不同的信道条件。这些方案可用于评估不同移动性管理和多连接方案的性能。
 \begin{figure}[ht]
 	\centering
 	\includegraphics[scale=0.6]{picture/buildings.png}
 	\caption{模拟场景}
-	\label{fig:delay}
+	\label{fig:delay2}
 \end{figure}
 
 此仿真实验的目的是比较双连接（DC）系统和硬切换（Hard Handover）系统的吞吐量、延迟。当UE 遇到连接中断时，DC架构的好处是显而易见的：由于双连接，它可以立即使用 LTE 链路恢复通信。而独立 UE 必须感知链路故障，然后执行要用随机接入程序进行完整的切换。这需要更多的时间，并导致该时刻吞吐量为零。
@@ -428,18 +428,18 @@ T_{d}=\sum_{i=0}^{\infty}(1-p)p^{i-1}T_{d}^{i}
 	\includegraphics[scale=0.45]{picture/DlRlcStats_Throughput.png}
 	\includegraphics[scale=0.45]{picture/DlRlcStats_Latency.png}
 	\caption{双连接}
-	\label{fig:delay}
+	\label{fig:delay3}
 \end{figure}
 \begin{figure}[H]
 	\centering
 	\includegraphics[scale=0.45]{picture/DlPdcpStats_Throughput.png}
 	\includegraphics[scale=0.45]{picture/DlPdcpStats_Latency.png}
 	\caption{硬切换}
-	\label{fig:delay}
+	\label{fig:delay4}
 \end{figure}
 
 证明了双连通性框架在使用mmWave访问链路的端到端网络的切换管理方面提供了显著的性能改进，包括（i）减少包丢失，（ii）减少控制指令，（iii）减少延迟，（iV）更高的吞吐量稳定性。
-\clearpage
+
 \begin{thebibliography}{99}
 	\bibitem{1} 白科,胡建平.无线局域网DCF性能分析与仿真[J].现代电子技术,2008(01):13-15+17.
 	\bibitem{2} 陈坚刚.IEEE802.11b的DCF退避算法实现技术探究[J].浙江工商职业技术学院学报,2010,9(03):36-39.
@@ -448,7 +448,7 @@ T_{d}=\sum_{i=0}^{\infty}(1-p)p^{i-1}T_{d}^{i}
 \end{thebibliography}
 
 \appendix
-\section{TCP相关}
+\section{TCP仿真部分}
 
 \subsection {\bf RED代码}
 \lstinputlisting[
@@ -457,6 +457,11 @@ caption     =   {\bf p2.cc},
 label       =   {p2.cc}
 ]{./code/p2.cc}
 
-\section{DCF仿真代码}
-\subsection{数据}
+\section{DCF仿真部分}
+\subsection{代码}
+\lstinputlisting[
+style       =   Python,
+caption     =   {\bf wifi.cc},
+label       =   {wifi.cc}
+]{./code/wifi.cc}
 \end{document}
