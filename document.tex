@@ -136,7 +136,7 @@
 
 \begin{figure}[H]
 	\centering
-	\includegraphics[scale=0.6]{picture/p.png}
+	\includegraphics[scale=0.7]{picture/p.png}
 	\caption{丢弃概率对吞吐量的影响}
 	\label{fig:p}
 \end{figure}
@@ -190,7 +190,7 @@ TCP拥塞控制的目标在于最大化利用网络上瓶颈链路$(Bottleneck)$
 	\label{fig:cWTCP}
 \end{figure}
 
-在程序刚刚开始运行时，WestWood、Veno爬升的很快，Vegas爬升程度只有上述算法的一半。
+在程序刚刚开始运行时，$WestWood$、$Veno$爬升的很快，$Vegas$爬升程度只有上述算法的一半。
 
 在0.25s时发生了一次丢包事件，这可能是路由的队列管理或者校验和错误，$Venos$、$WestWood$都有非常明显的下降趋势，$WestWood$的下降比率达到了将近$90\%$，而$Veno$也有$50\%$左右，相比之下$Vegas$则由于其较小的增速与减速率维持住了一个较好的平衡。
 
