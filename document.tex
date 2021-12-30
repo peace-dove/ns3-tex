@@ -185,10 +185,12 @@ TCP拥塞控制的目标在于最大化利用网络上瓶颈链路$(Bottleneck)$
 
 \begin{figure}[H]
 	\centering
-	\includegraphics[scale=0.6]{picture/cwTcp.png}
+	\includegraphics[scale=0.5]{picture/cwTcp.png}
 	\caption{TCP窗口大小与时间关系}
 	\label{fig:cWTCP}
 \end{figure}
+
+在程序刚刚开始运行时，WestWood、Veno爬升的很快，Vegas爬升程度只有上述算法的一半。
 
 在0.25s时发生了一次丢包事件，这可能是路由的队列管理或者校验和错误，$Venos$、$WestWood$都有非常明显的下降趋势，$WestWood$的下降比率达到了将近$90\%$，而$Veno$也有$50\%$左右，相比之下$Vegas$则由于其较小的增速与减速率维持住了一个较好的平衡。
 
@@ -203,7 +205,7 @@ TCP拥塞控制的目标在于最大化利用网络上瓶颈链路$(Bottleneck)$
 
 虽然在窗口大小上每种算法都经历了各种窗口大小的变化，但是从宏观角度，接收方所得到字节总量并没有发生太大区别，其主要原因有：（1）错误因子设置的比较小这也符合标准情况下网络链路出错概率较小的情况；（2）网络速率较快，短时间内的丢包将迅速被重传机制，快恢复机制所改正。
 
-经过以上实验，我们可以看到在标准环境下，$WestWood$凭借其算法特性窗口大小浮动很大，而$Vegas$和$Veno$则相对稳健，其中$Veno$更是能够在丢包事件中实现接受字节数小幅度减少。
+经过以上实验，我们可以看到在标准环境下，$WestWood$凭借其算法特性窗口大小浮动很大，而$Vegas$和$Veno$则相对稳健，其中$Veno$更是能够在丢包事件中实现接受字节数小幅度减少。当然我们必须要注意到，当前网络拓扑结构只是网络环境的一个特例，并非能够涵盖所有网络拓扑结构。
 
 \section{CSMA/CA实验}
 \subsection{802.11Mac层协议}
@@ -451,6 +453,14 @@ T_{d}=\sum_{i=0}^{\infty}(1-p)p^{i-1}T_{d}^{i}
 \section{TCP仿真部分}
 
 \subsection {\bf RED代码}
+
+\lstinputlisting[
+style       =   Python,
+caption     =   {\bf p1.cc},
+label       =   {p1.cc}
+]{./code/p1.cc}
+
+\subsection{\bf 拥塞控制代码}
 \lstinputlisting[
 style       =   Python,
 caption     =   {\bf p2.cc},
