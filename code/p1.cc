@@ -20,13 +20,12 @@ using namespace ns3;
 
 NS_LOG_COMPONENT_DEFINE("TcpComparision");
 
-AsciiTraceHelper ascii;
-Ptr<PacketSink> cbrSinks[5], tcpSink;
 
 int totalVal;
 int total_drops = 0;
 bool first_drop = true;
-
+AsciiTraceHelper ascii;
+Ptr<PacketSink> cbrSinks[5], tcpSink;
 // 统计丢失的数据包
 static void
 RxDrop(Ptr<OutputStreamWrapper> stream, Ptr<const Packet> p)
@@ -93,52 +92,18 @@ int main(int argc, char *argv[])
     {
         Config::SetDefault("ns3::TcpL4Protocol::SocketType", TypeIdValue(TcpNewReno::GetTypeId()));
     }
-    else if (prot.compare("TcpHybla") == 0)
-    {
-        Config::SetDefault("ns3::TcpL4Protocol::SocketType", TypeIdValue(TcpHybla::GetTypeId()));
-    }
-    else if (prot.compare("TcpHighSpeed") == 0)
-    {
-        Config::SetDefault("ns3::TcpL4Protocol::SocketType", TypeIdValue(TcpHighSpeed::GetTypeId()));
-    }
     else if (prot.compare("TcpVegas") == 0)
     {
         Config::SetDefault("ns3::TcpL4Protocol::SocketType", TypeIdValue(TcpVegas::GetTypeId()));
-    }
-    else if (prot.compare("TcpScalable") == 0)
-    {
-        Config::SetDefault("ns3::TcpL4Protocol::SocketType", TypeIdValue(TcpScalable::GetTypeId()));
-    }
-    else if (prot.compare("TcpHtcp") == 0)
-    {
-        Config::SetDefault("ns3::TcpL4Protocol::SocketType", TypeIdValue(TcpHtcp::GetTypeId()));
     }
     else if (prot.compare("TcpVeno") == 0)
     {
         Config::SetDefault("ns3::TcpL4Protocol::SocketType", TypeIdValue(TcpVeno::GetTypeId()));
     }
-    else if (prot.compare("TcpBic") == 0)
-    {
-        Config::SetDefault("ns3::TcpL4Protocol::SocketType", TypeIdValue(TcpBic::GetTypeId()));
-    }
-    else if (prot.compare("TcpYeah") == 0)
-    {
-        Config::SetDefault("ns3::TcpL4Protocol::SocketType", TypeIdValue(TcpYeah::GetTypeId()));
-    }
-    else if (prot.compare("TcpIllinois") == 0)
-    {
-        Config::SetDefault("ns3::TcpL4Protocol::SocketType", TypeIdValue(TcpIllinois::GetTypeId()));
-    }
     else if (prot.compare("TcpWestwood") == 0)
     {
         // 此处是默认拥塞算法
         Config::SetDefault("ns3::TcpL4Protocol::SocketType", TypeIdValue(TcpWestwood::GetTypeId()));
-        Config::SetDefault("ns3::TcpWestwood::FilterType", EnumValue(TcpWestwood::TUSTIN));
-    }
-    else if (prot.compare("TcpWestwoodPlus") == 0)
-    {
-        Config::SetDefault("ns3::TcpL4Protocol::SocketType", TypeIdValue(TcpWestwood::GetTypeId()));
-        Config::SetDefault("ns3::TcpWestwood::ProtocolType", EnumValue(TcpWestwood::WESTWOODPLUS));
         Config::SetDefault("ns3::TcpWestwood::FilterType", EnumValue(TcpWestwood::TUSTIN));
     }
     else
@@ -189,7 +154,7 @@ int main(int argc, char *argv[])
 
     NS_LOG_INFO("Create Applications.");
 
-    uint16_t port = 12344;
+    uint16_t port = 12345;
     BulkSendHelper source("ns3::TcpSocketFactory", InetSocketAddress(ipv4Container.GetAddress(1), port));
     // 设置传输的字节数
     source.SetAttribute("MaxBytes", UintegerValue(maxBytes));
@@ -236,13 +201,6 @@ int main(int argc, char *argv[])
 
     devices.Get(1)->TraceConnectWithoutContext("PhyRxDrop", MakeBoundCallback(&RxDrop, dropped_packets_data));
 
-    if (tracing)
-    {
-        AsciiTraceHelper ascii;
-        pointToPoint.EnableAsciiAll(ascii.CreateFileStream("tcp-comparision.tr"));
-        pointToPoint.EnablePcapAll("tcp-comparision", true);
-    }
-
     NS_LOG_INFO("Run Simulation.");
 
     Simulator::Schedule(Seconds(0.00001), &TotalRx, total_bytes_data);
@@ -257,16 +215,7 @@ int main(int argc, char *argv[])
     Simulator::Run();
     Ptr<Ipv4FlowClassifier> classifier = DynamicCast<Ipv4FlowClassifier>(flowHelper.GetClassifier());
     std::map<FlowId, FlowMonitor::FlowStats> stats = flowMonitor->GetFlowStats();
-    std::cout << std::endl
-              << "*** Flow monitor statistics ***" << std::endl;
-    std::cout << "  Tx Packets:   " << stats[1].txPackets << std::endl;
-    std::cout << "  Tx Bytes:   " << stats[1].txBytes << std::endl;
-    std::cout << "  Offered Load: " << stats[1].txBytes * 8.0 / (stats[1].timeLastTxPacket.GetSeconds() - stats[1].timeFirstTxPacket.GetSeconds()) / 1000000 << " Mbps" << std::endl;
-    std::cout << "  Rx Packets:   " << stats[1].rxPackets << std::endl;
-    std::cout << "  Rx Bytes:   " << stats[1].rxBytes << std::endl;
-    std::cout << "  Throughput: " << stats[1].rxBytes * 8.0 / (stats[1].timeLastRxPacket.GetSeconds() - stats[1].timeFirstRxPacket.GetSeconds()) / 1000000 << " Mbps" << std::endl;
-    std::cout << "  Mean delay:   " << stats[1].delaySum.GetSeconds() / stats[1].rxPackets << std::endl;
-    std::cout << "  Mean jitter:   " << stats[1].jitterSum.GetSeconds() / (stats[1].rxPackets - 1) << std::endl;
+
     flowMonitor->SerializeToXmlFile("data.flowmon", true, true);
 
     Simulator::Destroy();
